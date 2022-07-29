@@ -7,16 +7,33 @@ public class Main {
     public static void main(String[] args) {
         Scanner sc = new Scanner(System.in);
         boolean working = true;
-//        try {
+        try {
             while (working) {
                 System.out.print(">>> ");
                 String command = sc.nextLine();
-                String[] commands = reverse(command.split(" "));
+                String[] commands = reverse(split(command));
                 working = operate(commands);
             }
-//        } catch (Exception e) {
-//            System.err.println("Nani the fuck?");
-//        }
+        } catch (Exception e) {
+            System.err.println("Nani the fuck?");
+        }
+    }
+
+    static String[] split(String s) {
+        ArrayList<String> sList = new ArrayList<String>();
+        boolean inDoubleQuotes = false;
+        String word = "";
+        for (char c : s.toCharArray()) {
+            if (c == '\"' || c == '\'') inDoubleQuotes = !inDoubleQuotes;
+            if (c == ' ' && !inDoubleQuotes) {
+                sList.add(word);
+                word = "";
+            } else {
+                word += c;
+            }
+        }
+        sList.add(word);
+        return sList.toArray(new String[sList.size()]);
     }
 
     static String[] reverse(String[] strings) {
@@ -77,12 +94,15 @@ public class Main {
                 System.out.println(arg.substring(1, commandsCharArr.length - 1));
             else if (isInt(commandsCharArr)) System.out.println(arg);
             else {
+                boolean worked = false;
                 for (Item i : items) {
                     if (i.name.equals(arg)) {
                         System.out.println(i.value);
+                        worked = true;
                         break;
                     }
                 }
+                if (!worked) System.err.println("Variable not found.");
             }
         } else if (name.equals("type")) {
             char[] commandsCharArr = arg.toCharArray();
@@ -90,12 +110,15 @@ public class Main {
                 System.out.println("STRING");
             else if (isInt(commandsCharArr)) System.out.println("INT");
             else {
+                boolean worked = false;
                 for (Item i : items) {
                     if (i.name.equals(arg)) {
                         System.out.println(i.type.name());
+                        worked = true;
                         break;
                     }
                 }
+                if (!worked) System.err.println("Variable not found.");
             }
         }
     }
