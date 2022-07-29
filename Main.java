@@ -3,6 +3,7 @@ import java.util.Scanner;
 
 public class Main {
     static ArrayList<Item> items = new ArrayList<Item>();
+    static ArrayList<Item> localItems = new ArrayList<Item>();
 
     public static void main(String[] args) {
         Scanner sc = new Scanner(System.in);
@@ -120,6 +121,23 @@ public class Main {
                 }
                 if (!worked) System.err.println("Variable not found.");
             }
+        } else if (name.equals("input")) {
+            System.out.print(arg.substring(1, arg.length() - 1));
+            Scanner sc = new Scanner(System.in);
+            String result = sc.nextLine();
+            localItems.add(new Item(Item.types.STRING, result, "temp"));
+        } else if (name.equals("int")) {
+            char c = arg.toCharArray()[arg.toCharArray().length - 1];
+            if ((arg.toCharArray()[0] == '\"' && c == '\"') || (arg.toCharArray()[0] == '\'' && c == '\'')) localItems.add(new Item(Item.types.INT, arg.substring(1, arg.length() - 1), "temp"));
+            else if (isInt(arg.toCharArray())) localItems.add(new Item(Item.types.INT, arg, "temp"));
+            else {
+                for (Item i : items) {
+                    if (i.name.equals(arg)) {
+                        localItems.add(new Item(Item.types.INT, i.value, "temp"));
+                        break;
+                    }
+                }
+            }
         }
     }
 
@@ -134,7 +152,6 @@ public class Main {
 
     static boolean operate(String[] commands) {
         Operators op = new Operators();
-        ArrayList<Item> localItems = new ArrayList<Item>();
         int i = 0;
         Operators.operators next = Operators.operators.NONE;
 
@@ -147,11 +164,11 @@ public class Main {
                     String name = getFunctionInfo(commandsCharArr)[0];
                     String args = getFunctionInfo(commandsCharArr)[1];
                     handleFunction(name, args);
-                    return true;
+                } else {
+                    if ((commandsCharArr[0] == '\"' && commandsCharArr[commandsCharArr.length - 1] == '\"') || (commandsCharArr[0] == '\'' && commandsCharArr[commandsCharArr.length - 1] == '\'')) localItems.add(new Item(Item.types.STRING, command.substring(1, commandsCharArr.length - 1), "temp"));
+                    else if (isInt(commandsCharArr)) localItems.add(new Item(Item.types.INT, command, "temp"));
+                    else localItems.add(new Item(isInt(getValue(command).toCharArray()) ? Item.types.INT : Item.types.STRING, getValue(command), "temp"));
                 }
-                if ((commandsCharArr[0] == '\"' && commandsCharArr[commandsCharArr.length - 1] == '\"') || (commandsCharArr[0] == '\'' && commandsCharArr[commandsCharArr.length - 1] == '\'')) localItems.add(new Item(Item.types.STRING, command.substring(1, commandsCharArr.length - 1), "temp"));
-                else if (isInt(commandsCharArr)) localItems.add(new Item(Item.types.INT, command, "temp"));
-                else localItems.add(new Item(isInt(getValue(command).toCharArray()) ? Item.types.INT : Item.types.STRING, getValue(command), "temp"));
             }
             if (next == Operators.operators.NONE) next = op.getOperator((command.toCharArray()[0]));
             else {
@@ -184,6 +201,7 @@ public class Main {
                 items.add(new Item(localItems.get(localItems.size() - 1).type, localItems.get(localItems.size() - 1).value, commands[commands.length - 1]));
             }
         }
+        localItems.clear();
         return working;
     }
 }
