@@ -72,29 +72,42 @@ public class Main {
         return opening < closing;
     }
 
-    static String[] getFunctionInfo(char[] charArr) {
-        boolean inside = false;
-        String name = "";
-        String arg = "";
-        for (char c : charArr) {
-            if (c == '(') {
-                inside = true;
-                continue;
+    static String[] getFunctionInfo(char[] charArrArg) {
+        String name, arg;
+        char[] charArr = charArrArg;
+        do {
+            arg = "";
+            name = "";
+            int bracketsLevel = 0;
+            boolean inside = false;
+            for (char c : charArr) {
+                if (c == '(') {
+                    arg += c;
+                    inside = true;
+                    bracketsLevel++;
+                    continue;
+                }
+                else if (c == ')') {
+                    arg += c;
+                    bracketsLevel--;
+                    if (bracketsLevel == 0) break;
+                }
+                if (!inside) name += c;
+                else arg += c;
             }
-            else if (c == ')') break;
-            if (!inside) name += c;
-            else arg += c;
-        }
+            charArr = arg.substring(1, arg.length() - 1).toCharArray();
+        } while (surroundedWithBrackets(charArr));
         return new String[] {name, arg};
     }
 
-    static void handleFunction(String name, String arg) {
+    static String handleFunction(String name, String arg) {
         if (name.equals("print")) {
             char[] commandsCharArr = arg.toCharArray();
             if ((commandsCharArr[0] == '\"' && commandsCharArr[commandsCharArr.length - 1] == '\"') || (commandsCharArr[0] == '\'' && commandsCharArr[commandsCharArr.length - 1] == '\''))
                 System.out.println(arg.substring(1, commandsCharArr.length - 1));
             else if (isInt(commandsCharArr)) System.out.println(arg);
             else {
+                if (commandsCharArr[0] == '(' && commandsCharArr[commandsCharArr.length - 1] == ')') arg = arg.substring(1, arg.length() - 1);
                 boolean worked = false;
                 for (Item i : items) {
                     if (i.name.equals(arg)) {
@@ -105,12 +118,14 @@ public class Main {
                 }
                 if (!worked) System.err.println("Variable not found.");
             }
+            return null;
         } else if (name.equals("type")) {
             char[] commandsCharArr = arg.toCharArray();
             if ((commandsCharArr[0] == '\"' && commandsCharArr[commandsCharArr.length - 1] == '\"') || (commandsCharArr[0] == '\'' && commandsCharArr[commandsCharArr.length - 1] == '\''))
                 System.out.println("STRING");
             else if (isInt(commandsCharArr)) System.out.println("INT");
             else {
+                if (commandsCharArr[0] == '(' && commandsCharArr[commandsCharArr.length - 1] == ')') arg = arg.substring(1, arg.length() - 1);
                 boolean worked = false;
                 for (Item i : items) {
                     if (i.name.equals(arg)) {
@@ -121,24 +136,26 @@ public class Main {
                 }
                 if (!worked) System.err.println("Variable not found.");
             }
+            return null;
         } else if (name.equals("input")) {
             System.out.print(arg.substring(1, arg.length() - 1));
             Scanner sc = new Scanner(System.in);
-            String result = sc.nextLine();
-            localItems.add(new Item(Item.types.STRING, result, "temp"));
+            return "\"" + sc.nextLine() + "\"";
         } else if (name.equals("int")) {
+            if (arg.toCharArray()[0] == '(' && arg.toCharArray()[arg.length() - 1] == ')') arg = arg.substring(1, arg.length() - 1);
             char c = arg.toCharArray()[arg.toCharArray().length - 1];
-            if ((arg.toCharArray()[0] == '\"' && c == '\"') || (arg.toCharArray()[0] == '\'' && c == '\'')) localItems.add(new Item(Item.types.INT, arg.substring(1, arg.length() - 1), "temp"));
-            else if (isInt(arg.toCharArray())) localItems.add(new Item(Item.types.INT, arg, "temp"));
+            if ((arg.toCharArray()[0] == '\"' && c == '\"') || (arg.toCharArray()[0] == '\'' && c == '\'')) return arg.substring(1, arg.length() - 1);
+            else if (isInt(arg.toCharArray())) return arg;
             else {
                 for (Item i : items) {
                     if (i.name.equals(arg)) {
-                        localItems.add(new Item(Item.types.INT, i.value, "temp"));
-                        break;
+                        return i.value;
                     }
                 }
             }
+            return null;
         }
+        return null;
     }
 
     static String getValue(String s) {
@@ -160,11 +177,17 @@ public class Main {
             i += 1;
             if (op.getOperator(command.toCharArray()[0]) == Operators.operators.NONE) {
                 char[] commandsCharArr = command.toCharArray();
-                if (surroundedWithBrackets(commandsCharArr)) {
+                boolean doNext = true;
+                while (surroundedWithBrackets(commandsCharArr) && doNext) {
                     String name = getFunctionInfo(commandsCharArr)[0];
                     String args = getFunctionInfo(commandsCharArr)[1];
-                    handleFunction(name, args);
-                } else {
+                    String result = handleFunction(name, args);
+                    if (result != null) {
+                        command = command.replace(name + args, result);
+                        commandsCharArr = command.toCharArray();
+                    } else doNext = false;
+                }
+                if (doNext) {
                     if ((commandsCharArr[0] == '\"' && commandsCharArr[commandsCharArr.length - 1] == '\"') || (commandsCharArr[0] == '\'' && commandsCharArr[commandsCharArr.length - 1] == '\'')) localItems.add(new Item(Item.types.STRING, command.substring(1, commandsCharArr.length - 1), "temp"));
                     else if (isInt(commandsCharArr)) localItems.add(new Item(Item.types.INT, command, "temp"));
                     else localItems.add(new Item(isInt(getValue(command).toCharArray()) ? Item.types.INT : Item.types.STRING, getValue(command), "temp"));
