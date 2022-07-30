@@ -8,16 +8,16 @@ public class Main {
     public static void main(String[] args) {
         Scanner sc = new Scanner(System.in);
         boolean working = true;
-//        try {
+        try {
             while (working) {
                 System.out.print(">>> ");
                 String command = sc.nextLine();
                 String[] commands = reverse(split(command));
                 working = operate(commands);
             }
-//        } catch (Exception e) {
-//            System.err.println("Nani the fuck?");
-//        }
+        } catch (Exception e) {
+            System.err.println("Nani the fuck?");
+        }
     }
 
     static String[] split(String s) {
