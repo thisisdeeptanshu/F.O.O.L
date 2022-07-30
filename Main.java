@@ -8,25 +8,27 @@ public class Main {
     public static void main(String[] args) {
         Scanner sc = new Scanner(System.in);
         boolean working = true;
-        try {
+//        try {
             while (working) {
                 System.out.print(">>> ");
                 String command = sc.nextLine();
                 String[] commands = reverse(split(command));
                 working = operate(commands);
             }
-        } catch (Exception e) {
-            System.err.println("Nani the fuck?");
-        }
+//        } catch (Exception e) {
+//            System.err.println("Nani the fuck?");
+//        }
     }
 
     static String[] split(String s) {
         ArrayList<String> sList = new ArrayList<String>();
         boolean inDoubleQuotes = false;
+        boolean inBrackets = false;
         String word = "";
         for (char c : s.toCharArray()) {
             if (c == '\"' || c == '\'') inDoubleQuotes = !inDoubleQuotes;
-            if (c == ' ' && !inDoubleQuotes) {
+            if (c == '(' || c == ')') inBrackets = !inBrackets;
+            if (c == ' ' && !inDoubleQuotes && !inBrackets) {
                 sList.add(word);
                 word = "";
             } else {
@@ -103,11 +105,21 @@ public class Main {
     static String handleFunction(String name, String arg) {
         if (name.equals("print")) {
             char[] commandsCharArr = arg.toCharArray();
-            if ((commandsCharArr[0] == '\"' && commandsCharArr[commandsCharArr.length - 1] == '\"') || (commandsCharArr[0] == '\'' && commandsCharArr[commandsCharArr.length - 1] == '\''))
+            if (commandsCharArr[0] == '(' && commandsCharArr[commandsCharArr.length - 1] == ')') arg = arg.substring(1, arg.length() - 1);
+            commandsCharArr = arg.toCharArray();
+            if (((commandsCharArr[0] == '\"' && commandsCharArr[commandsCharArr.length - 1] == '\"') || (commandsCharArr[0] == '\'' && commandsCharArr[commandsCharArr.length - 1] == '\'')) && split(arg).length == 1) {
                 System.out.println(arg.substring(1, commandsCharArr.length - 1));
+            }
             else if (isInt(commandsCharArr)) System.out.println(arg);
             else {
-                if (commandsCharArr[0] == '(' && commandsCharArr[commandsCharArr.length - 1] == ')') arg = arg.substring(1, arg.length() - 1);
+                if (split(arg).length > 1) {
+                    String[] _split = split(arg);
+                    String[] args = new String[2 + _split.length];
+                    args[0] = "_tempitem_"; args[1] = "="; for (int i = 2; i < _split.length + 2; i++) {args[i] = _split[i-2];}
+                    operate(reverse(args));
+                    arg = "_tempitem_";
+                    localItems.clear();
+                }
                 boolean worked = false;
                 for (Item i : items) {
                     if (i.name.equals(arg)) {
@@ -220,6 +232,11 @@ public class Main {
                     System.err.println("Only one value on right side allowed.");
                     working = false;
                     break;
+                }
+                if (getValue(commands[commands.length - 1]) != null) {
+                    int deletionIndex = 1000;
+                    for (Item item : items) if (item.name == commands[commands.length - 1]) deletionIndex = items.indexOf(item);
+                    items.remove(deletionIndex);
                 }
                 items.add(new Item(localItems.get(localItems.size() - 1).type, localItems.get(localItems.size() - 1).value, commands[commands.length - 1]));
             }
