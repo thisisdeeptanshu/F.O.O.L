@@ -23,12 +23,13 @@ public class Main {
     static String[] split(String s) {
         ArrayList<String> sList = new ArrayList<String>();
         boolean inDoubleQuotes = false;
-        boolean inBrackets = false;
+        int bracketsLevel = 0;
         String word = "";
         for (char c : s.toCharArray()) {
             if (c == '\"' || c == '\'') inDoubleQuotes = !inDoubleQuotes;
-            if (c == '(' || c == ')') inBrackets = !inBrackets;
-            if (c == ' ' && !inDoubleQuotes && !inBrackets) {
+            if (c == '(') bracketsLevel++;
+            if (c == ')') bracketsLevel--;
+            if (c == ' ' && !inDoubleQuotes && bracketsLevel == 0) {
                 sList.add(word);
                 word = "";
             } else {
@@ -166,6 +167,25 @@ public class Main {
                 }
             }
             return null;
+        } else {
+            for (Item i : items) {
+                if (i.name.equals(name) && i.type == Item.types.FUNCTION) {
+                    if (arg.toCharArray()[0] == '(' && arg.toCharArray()[arg.length() - 1] == ')') arg = arg.substring(1, arg.length() - 1);
+                    String[] args = arg.split(" ");
+                    String function = i.value;
+                    for (int j = 0; j < args.length; j++) {
+                        function = function.replace(i.args[j], args[j]);
+                    }
+                    String[] _split = split(function);
+                    args = new String[2 + _split.length];
+                    args[0] = "_tempitem_"; args[1] = "="; for (int j = 2; j < _split.length + 2; j++) {args[j] = _split[j-2];}
+                    operate(reverse(args));
+                    function = "_tempitem_";
+                    localItems.clear();
+
+                    return function;
+                }
+            }
         }
         return null;
     }
@@ -179,10 +199,37 @@ public class Main {
         return null;
     }
 
+    static void setFunction(String[] commands) {
+        String name = commands[commands.length - 1];
+        String args = commands[commands.length - 4].substring(0, commands[commands.length - 4].length() - 1);
+        String function = commands[commands.length - 5].substring(1, commands[commands.length - 5].length() - 1);
+        deleteExistingName(name);
+        items.add(new Item(Item.types.FUNCTION,  function, name));
+        items.get(items.size() - 1).setArgs(args.substring(1, args.length() - 1).split(" "));
+    }
+
+    static void deleteExistingName(String name) {
+        if (getValue(name) != null) {
+            int deletionIndex = 1000;
+            for (Item item : items) if (item.name.equals(name)) deletionIndex = items.indexOf(item);
+            if (deletionIndex != 1000) items.remove(deletionIndex);
+        }
+    }
+
     static boolean operate(String[] commands) {
         Operators op = new Operators();
         int i = 0;
         Operators.operators next = Operators.operators.NONE;
+
+        boolean isFunction = false;
+        for (String command : commands) {
+            if (command.equals("lambda")) {
+                isFunction = true;
+                setFunction(commands);
+                break;
+            }
+        }
+        if (isFunction) return true;
 
         boolean working = true;
         for (String command : commands) {
@@ -209,7 +256,7 @@ public class Main {
             else {
                 if (next == Operators.operators.PLUS) {
                     if (localItems.get(localItems.size() - 1).type == localItems.get(localItems.size() - 2).type && localItems.get(localItems.size() - 1).type == Item.types.STRING) localItems.add(new Item(Item.types.STRING, localItems.get(localItems.size() - 1).value + localItems.get(localItems.size() - 2).value, "temp"));
-                    else if (localItems.get(localItems.size() - 1).type == localItems.get(localItems.size() - 2).type && localItems.get(localItems.size() - 1).type == Item.types.INT) localItems.add(new Item(Item.types.INT, String.valueOf(Integer.valueOf(localItems.get(localItems.size() - 1).value) + Integer.valueOf(localItems.get(localItems.size() - 2).value)), "temp"));
+                    else if (localItems.get(localItems.size() - 1).type == localItems.get(localItems.size() - 2).type && localItems.get(localItems.size() - 1).type == Item.types.INT) localItems.add(new Item(Item.types.INT, String.valueOf(Float.valueOf(localItems.get(localItems.size() - 1).value) + Float.valueOf(localItems.get(localItems.size() - 2).value)), "temp"));
                     else {
                         System.err.println("Values have to be of the same type.");
                         working = false;
@@ -217,7 +264,23 @@ public class Main {
                     }
                     next = Operators.operators.NONE;
                 } else if (next == Operators.operators.MINUS) {
-                    if (localItems.get(localItems.size() - 1).type == localItems.get(localItems.size() - 2).type && localItems.get(localItems.size() - 1).type == Item.types.INT) localItems.add(new Item(Item.types.INT, String.valueOf(Integer.valueOf(localItems.get(localItems.size() - 1).value) - Integer.valueOf(localItems.get(localItems.size() - 2).value)), "temp"));
+                    if (localItems.get(localItems.size() - 1).type == localItems.get(localItems.size() - 2).type && localItems.get(localItems.size() - 1).type == Item.types.INT) localItems.add(new Item(Item.types.INT, String.valueOf(Float.valueOf(localItems.get(localItems.size() - 1).value) - Float.valueOf(localItems.get(localItems.size() - 2).value)), "temp"));
+                    else {
+                        System.err.println("Values have to be of type int.");
+                        working = false;
+                        break;
+                    }
+                    next = Operators.operators.NONE;
+                } else if (next == Operators.operators.MULTIPLY) {
+                    if (localItems.get(localItems.size() - 1).type == localItems.get(localItems.size() - 2).type && localItems.get(localItems.size() - 1).type == Item.types.INT) localItems.add(new Item(Item.types.INT, String.valueOf(Float.valueOf(localItems.get(localItems.size() - 1).value) * Float.valueOf(localItems.get(localItems.size() - 2).value)), "temp"));
+                    else {
+                        System.err.println("Values have to be of type int.");
+                        working = false;
+                        break;
+                    }
+                    next = Operators.operators.NONE;
+                } else if (next == Operators.operators.DIVIDE) {
+                    if (localItems.get(localItems.size() - 1).type == localItems.get(localItems.size() - 2).type && localItems.get(localItems.size() - 1).type == Item.types.INT) localItems.add(new Item(Item.types.INT, String.valueOf(Float.valueOf(localItems.get(localItems.size() - 1).value) / Float.valueOf(localItems.get(localItems.size() - 2).value)), "temp"));
                     else {
                         System.err.println("Values have to be of type int.");
                         working = false;
@@ -233,11 +296,7 @@ public class Main {
                     working = false;
                     break;
                 }
-                if (getValue(commands[commands.length - 1]) != null) {
-                    int deletionIndex = 1000;
-                    for (Item item : items) if (item.name == commands[commands.length - 1]) deletionIndex = items.indexOf(item);
-                    items.remove(deletionIndex);
-                }
+                deleteExistingName(commands[commands.length - 1]);
                 items.add(new Item(localItems.get(localItems.size() - 1).type, localItems.get(localItems.size() - 1).value, commands[commands.length - 1]));
             }
         }
