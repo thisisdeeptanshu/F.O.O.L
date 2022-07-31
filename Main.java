@@ -12,8 +12,15 @@ public class Main {
             while (working) {
                 System.out.print(">>> ");
                 String command = sc.nextLine();
-                String[] commands = reverse(split(command));
-                working = operate(commands);
+                if (command.toLowerCase().equals("credits")) System.out.println("https://thisisdeeptanshu.github.io");
+                else if (command.toLowerCase().equals("exit")) {
+                    System.out.println("Good day.");
+                    working = false;
+                }
+                else {
+                    String[] commands = reverse(split(command));
+                    working = operate(commands);
+                }
             }
         } catch (Exception e) {
             System.err.println("Nani the fuck?");
@@ -59,8 +66,10 @@ public class Main {
 
     static boolean isInt(char[] charArr) {
         for (char c : charArr) {
-            int d = Character.getNumericValue(c);
-            if (d > 9 || d < 0) return false;
+        	if (c != '.') {
+        		int d = Character.getNumericValue(c);
+        		if (d > 9 || d < 0) return false;
+        	}
         }
         return true;
     }
@@ -168,24 +177,38 @@ public class Main {
             }
             return null;
         } else {
-            for (Item i : items) {
-                if (i.name.equals(name) && i.type == Item.types.FUNCTION) {
-                    if (arg.toCharArray()[0] == '(' && arg.toCharArray()[arg.length() - 1] == ')') arg = arg.substring(1, arg.length() - 1);
-                    String[] args = arg.split(" ");
-                    String function = i.value;
-                    for (int j = 0; j < args.length; j++) {
-                        function = function.replace(i.args[j], args[j]);
-                    }
-                    String[] _split = split(function);
-                    args = new String[2 + _split.length];
-                    args[0] = "_tempitem_"; args[1] = "="; for (int j = 2; j < _split.length + 2; j++) {args[j] = _split[j-2];}
-                    operate(reverse(args));
-                    function = "_tempitem_";
-                    localItems.clear();
+        	if (name.equals("")) {
+                Item[] tempLocalItems = new Item[localItems.size()];
+                int _i = 0;
+                for (Item item : localItems) {tempLocalItems[_i] = item;_i++;}
+				if (arg.toCharArray()[0] == '(' && arg.toCharArray()[arg.length() - 1] == ')') arg = arg.substring(1, arg.length() - 1);
+        		String[] _split = split(arg);
+        		String[] args = new String[2 + _split.length];
+				args[0] = "_tempitem_"; args[1] = "="; for (int j = 2; j < _split.length + 2; j++) {args[j] = _split[j-2];}
+                operate(reverse(args));
+                for (Item item : tempLocalItems) localItems.add(item);
 
-                    return function;
-                }
-            }
+				for (Item i : items) if (i.name.equals("_tempitem_")) return i.value;
+        	} else {
+        		for (Item i : items) {
+        			if (i.name.equals(name) && i.type == Item.types.FUNCTION) {
+        				if (arg.toCharArray()[0] == '(' && arg.toCharArray()[arg.length() - 1] == ')') arg = arg.substring(1, arg.length() - 1);
+        				String[] args = arg.split(" ");
+        				String function = i.value;
+        				for (int j = 0; j < args.length; j++) {
+        					function = function.replace(i.args[j], args[j]);
+        				}
+        				String[] _split = split(function);
+        				args = new String[2 + _split.length];
+        				args[0] = "_tempitem_"; args[1] = "="; for (int j = 2; j < _split.length + 2; j++) {args[j] = _split[j-2];}
+        				operate(reverse(args));
+        				function = "_tempitem_";
+        				localItems.clear();
+        				
+        				return function;
+        			}
+        		}
+        	}
         }
         return null;
     }
@@ -281,6 +304,14 @@ public class Main {
                     next = Operators.operators.NONE;
                 } else if (next == Operators.operators.DIVIDE) {
                     if (localItems.get(localItems.size() - 1).type == localItems.get(localItems.size() - 2).type && localItems.get(localItems.size() - 1).type == Item.types.INT) localItems.add(new Item(Item.types.INT, String.valueOf(Float.valueOf(localItems.get(localItems.size() - 1).value) / Float.valueOf(localItems.get(localItems.size() - 2).value)), "temp"));
+                    else {
+                        System.err.println("Values have to be of type int.");
+                        working = false;
+                        break;
+                    }
+                    next = Operators.operators.NONE;
+                } else if (next == Operators.operators.POW) {
+                    if (localItems.get(localItems.size() - 1).type == localItems.get(localItems.size() - 2).type && localItems.get(localItems.size() - 1).type == Item.types.INT) localItems.add(new Item(Item.types.INT, String.valueOf(Math.pow(Float.valueOf(localItems.get(localItems.size() - 1).value), Float.valueOf(localItems.get(localItems.size() - 2).value))), "temp"));
                     else {
                         System.err.println("Values have to be of type int.");
                         working = false;

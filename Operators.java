@@ -5,6 +5,7 @@ class Operators {
         MINUS,
         MULTIPLY,
         DIVIDE,
+        POW,
         NONE
     }
     public operators getOperator(char sign) {
@@ -13,6 +14,7 @@ class Operators {
         else if (sign == '-') return operators.MINUS;
         else if (sign == '*') return operators.MULTIPLY;
         else if (sign == '/') return operators.DIVIDE;
+        else if (sign == '^') return operators.POW;
         else {
             return operators.NONE;
         }
