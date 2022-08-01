@@ -160,13 +160,14 @@ public class Main {
             }
             return null;
         } else if (name.equals("input")) {
-            System.out.print(arg.substring(1, arg.length() - 1));
+            arg = arg.substring(1, arg.length() - 1);
+            if ((arg.toCharArray()[0] == '\"' && arg.toCharArray()[arg.toCharArray().length - 1] == '\"') || (arg.toCharArray()[0] == '\'' && arg.toCharArray()[arg.toCharArray().length - 1] == '\'')) arg = arg.substring(1, arg.length() - 1);
+            System.out.print(arg);
             Scanner sc = new Scanner(System.in);
             return "\"" + sc.nextLine() + "\"";
         } else if (name.equals("int")) {
             if (arg.toCharArray()[0] == '(' && arg.toCharArray()[arg.length() - 1] == ')') arg = arg.substring(1, arg.length() - 1);
-            char c = arg.toCharArray()[arg.toCharArray().length - 1];
-            if ((arg.toCharArray()[0] == '\"' && c == '\"') || (arg.toCharArray()[0] == '\'' && c == '\'')) return arg.substring(1, arg.length() - 1);
+            if ((arg.toCharArray()[0] == '\"' && arg.toCharArray()[arg.toCharArray().length - 1] == '\"') || (arg.toCharArray()[0] == '\'' && arg.toCharArray()[arg.toCharArray().length - 1] == '\'')) return arg.substring(1, arg.length() - 1);
             else if (isInt(arg.toCharArray())) return arg;
             else {
                 for (Item i : items) {
@@ -261,8 +262,9 @@ public class Main {
                 char[] commandsCharArr = command.toCharArray();
                 boolean doNext = true;
                 while (surroundedWithBrackets(commandsCharArr) && doNext) {
-                    String name = getFunctionInfo(commandsCharArr)[0];
-                    String args = getFunctionInfo(commandsCharArr)[1];
+                    String[] gfi = getFunctionInfo(commandsCharArr);
+                    String name = gfi[0].split(" ")[gfi[0].split(" ").length  - 1];
+                    String args = gfi[1];
                     String result = handleFunction(name, args);
                     if (result != null) {
                         command = command.replace(name + args, result);
