@@ -23,7 +23,7 @@ public class Main {
                 }
             }
         } catch (Exception e) {
-            System.err.println("Nani the fuck?");
+            System.err.println("crap");
         }
     }
 
